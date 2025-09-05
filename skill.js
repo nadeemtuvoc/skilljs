@@ -79,7 +79,7 @@ const ALLOWED_DIFFICULTY = new Set(["Simple", "Medium", "Complex"]);
  * Built automatically from MASTER_LIST for efficient skill-to-domain mapping
  */
 const SKILL_TO_DOMAIN = (() => {
-  console.log("🔧 Building skill-to-domain reverse lookup map...");
+ 
   const map = new Map();
   
   Object.entries(MASTER_LIST).forEach(([domain, skills]) => {
@@ -90,7 +90,7 @@ const SKILL_TO_DOMAIN = (() => {
     });
   });
   
-  console.log(`✅ Built reverse lookup for ${map.size} unique skills across ${Object.keys(MASTER_LIST).length} domains`);
+  
   return map;
 })();
 
@@ -113,7 +113,7 @@ function normalize(str) {
     .replace(/[''`]/g, "'")
     .trim();
   
-  console.log(`📝 Normalized "${str}" → "${normalized}"`);
+ 
   return normalized;
 }
 
@@ -154,7 +154,7 @@ function levenshtein(a, b) {
   }
   
   const distance = dp[m][n];
-  console.log(`🔍 Levenshtein distance between "${a}" and "${b}": ${distance}`);
+//   console.log(`🔍 Levenshtein distance between "${a}" and "${b}": ${distance}`);
   return distance;
 }
 
@@ -168,15 +168,14 @@ function levenshtein(a, b) {
  * @returns {string|null} The best matching candidate or null if no good match found
  */
 function bestFuzzyMatch(input, candidates, opts = {}) {
-  console.log(`🔍 Fuzzy matching "${input}" against ${candidates.length} candidates`);
-  
+//   console.log(`🔍 Fuzzy matching "${input}" against ${candidates.length} candidates`);
   const normInput = normalize(input);
   const byNorm = new Map(candidates.map(c => [normalize(c), c]));
   
   // Check for exact normalized match first
   if (byNorm.has(normInput)) {
     const exactMatch = byNorm.get(normInput);
-    console.log(`✅ Found exact normalized match: "${exactMatch}"`);
+    // console.log(`✅ Found exact normalized match: "${exactMatch}"`);
     return exactMatch;
   }
 
@@ -198,11 +197,11 @@ function bestFuzzyMatch(input, candidates, opts = {}) {
   const maxDist = Math.min(3, Math.ceil(len * 0.3));
   
   if (bestDist <= maxDist || ratio <= 0.3) {
-    console.log(`✅ Found fuzzy match: "${best}" (distance: ${bestDist}, ratio: ${ratio.toFixed(2)})`);
+    // console.log(`✅ Found fuzzy match: "${best}" (distance: ${bestDist}, ratio: ${ratio.toFixed(2)})`);
     return best;
   }
 
-  console.log(`❌ No suitable fuzzy match found (best distance: ${bestDist}, ratio: ${ratio.toFixed(2)})`);
+//   console.log(`❌ No suitable fuzzy match found (best distance: ${bestDist}, ratio: ${ratio.toFixed(2)})`);
   return null;
 }
 
@@ -213,12 +212,12 @@ function bestFuzzyMatch(input, candidates, opts = {}) {
  * @returns {string|null} The canonicalized difficulty or null if invalid
  */
 function canonicalizeDifficulty(diff) {
-  console.log(`🔄 Canonicalizing difficulty: "${diff}"`);
+//   console.log(`🔄 Canonicalizing difficulty: "${diff}"`);
   const d = String(diff || "").trim();
   const title = d.charAt(0).toUpperCase() + d.slice(1).toLowerCase();
   
   const isValid = ALLOWED_DIFFICULTY.has(title);
-  console.log(`📊 Difficulty "${diff}" → "${title}" (valid: ${isValid})`);
+//   console.log(`📊 Difficulty "${diff}" → "${title}" (valid: ${isValid})`);
   
   return isValid ? title : null;
 }
@@ -231,7 +230,7 @@ function canonicalizeDifficulty(diff) {
  * @returns {Object} A deep copy of the input object
  */
 function clone(obj) {
-  console.log(`📋 Cloning object with ${Object.keys(obj).length} properties`);
+//   console.log(`📋 Cloning object with ${Object.keys(obj).length} properties`);
   return JSON.parse(JSON.stringify(obj));
 }
 
@@ -246,45 +245,44 @@ function clone(obj) {
  * @returns {Object|null} Canonical item or null if validation fails
  */
 function toCanonicalItem(item) {
-  console.log(`🔄 Processing item:`, item);
+//   console.log(`🔄 Processing item:`, item);
   const raw = clone(item);
 
   // 1) Validate and canonicalize difficulty
   const difficulty = canonicalizeDifficulty(raw.difficulty);
   if (!difficulty) {
-    console.log(`❌ Invalid difficulty: "${raw.difficulty}"`);
+    // console.log(`❌ Invalid difficulty: "${raw.difficulty}"`);
     return null;
   }
-
+// console.log(SKILL_TO_DOMAIN)
   // 2) Find skill using fuzzy matching across all available skills
   const allSkills = Array.from(SKILL_TO_DOMAIN.keys());
   const skill = bestFuzzyMatch(raw.skill, allSkills);
   if (!skill) {
-    console.log(`❌ No valid skill found for: "${raw.skill}"`);
+     console.log(`❌ No valid skill found for: "${raw.skill}"`);
     return null;
   }
 
   // 3) Determine domain: prefer domain that owns the skill
   const owningDomains = SKILL_TO_DOMAIN.get(skill) || [];
   let domain = null;
-
   if (owningDomains.length === 1) {
     domain = owningDomains[0];
-    console.log(`✅ Single domain found for skill: ${domain}`);
+    // console.log(`✅ Single domain found for skill: ${domain}`);
   } else if (owningDomains.length > 1) {
     // If skill exists in multiple domains, try to fuzzy-match the provided domain
     const guess = bestFuzzyMatch(raw.domain, owningDomains);
     domain = guess || owningDomains[0];
-    console.log(`🔀 Multiple domains for skill, using: ${domain} (from ${owningDomains.join(', ')})`);
+    // console.log(`🔀 Multiple domains for skill, using: ${domain} (from ${owningDomains.join(', ')})`);
   } else {
     // This shouldn't happen since skill came from the map, but guard anyway
-    console.log(`❌ No domains found for skill: ${skill}`);
+    // console.log(`❌ No domains found for skill: ${skill}`);
     return null;
   }
 
   // 4) Final validation: ensure (domain, skill) pair exists in master list
   if (!MASTER_LIST[domain] || !MASTER_LIST[domain].includes(skill)) {
-    console.log(`❌ Domain-skill pair not found in master list: ${domain} - ${skill}`);
+    // console.log(`❌ Domain-skill pair not found in master list: ${domain} - ${skill}`);
     return null;
   }
 
@@ -292,11 +290,11 @@ function toCanonicalItem(item) {
   let questions = Number(raw.questions);
   if (!Number.isFinite(questions)) {
     questions = 0;
-    console.log(`⚠️ Invalid questions count, defaulting to 0`);
+    // console.log(`⚠️ Invalid questions count, defaulting to 0`);
   }
 
   const canonicalItem = { domain, skill, difficulty, questions };
-  console.log(`✅ Successfully canonicalized item:`, canonicalItem);
+//  console.log(`✅ Successfully canonicalized item:`, canonicalItem);
   return canonicalItem;
 }
 
@@ -307,7 +305,7 @@ function toCanonicalItem(item) {
  * @returns {Array} Array with duplicates removed
  */
 function dedupe(items) {
-  console.log(`🔄 Deduplicating ${items.length} items...`);
+//   console.log(`🔄 Deduplicating ${items.length} items...`);
   const seen = new Set();
   const out = [];
   
@@ -317,11 +315,11 @@ function dedupe(items) {
       seen.add(key);
       out.push(it);
     } else {
-      console.log(`🗑️ Removing duplicate: ${it.domain} - ${it.skill}`);
+    //   console.log(`🗑️ Removing duplicate: ${it.domain} - ${it.skill}`);
     }
   }
   
-  console.log(`✅ Deduplication complete: ${items.length} → ${out.length} items`);
+ console.log(`✅ Deduplication complete: ${items.length} → ${out.length} items`);
   return out;
 }
 
@@ -349,11 +347,11 @@ function ensurePerItemBounds(items) {
     }
     
     if (original !== it.questions) {
-      console.log(`📊 Adjusted questions for ${it.skill}: ${original} → ${it.questions}`);
+    //   console.log(`📊 Adjusted questions for ${it.skill}: ${original} → ${it.questions}`);
     }
   }
   
-  console.log(`✅ Per-item bounds adjustment complete`);
+//   console.log(`✅ Per-item bounds adjustment complete`);
 }
 
 /**
@@ -364,7 +362,7 @@ function ensurePerItemBounds(items) {
  */
 function totalQuestions(items) {
   const total = items.reduce((sum, item) => sum + item.questions, 0);
-  console.log(`📊 Total questions: ${total}`);
+//   console.log(`📊 Total questions: ${total}`);
   return total;
 }
 
@@ -378,8 +376,9 @@ function increaseToTarget(items, target) {
   console.log(`📈 Increasing questions to reach target: ${target}`);
   
   let total = totalQuestions(items);
+  console.log(total +'>='+target+'=====================')
   if (total >= target) {
-    console.log(`✅ Already at or above target (${total} >= ${target})`);
+    // console.log(`✅ Already at or above target (${total} >= ${target})`);
     return;
   }
 
@@ -399,12 +398,12 @@ function increaseToTarget(items, target) {
     }
     
     if (!progressed) {
-      console.log(`⚠️ All items at maximum (8 questions), cannot increase further`);
+    //   console.log(`⚠️ All items at maximum (8 questions), cannot increase further`);
       break;
     }
   }
   
-  console.log(`✅ Increase complete. Final total: ${total}`);
+//   console.log(`✅ Increase complete. Final total: ${total}`);
 }
 
 /**
@@ -414,11 +413,11 @@ function increaseToTarget(items, target) {
  * @param {number} target - Target total number of questions
  */
 function decreaseToTarget(items, target) {
-  console.log(`📉 Decreasing questions to reach target: ${target}`);
+//   console.log(`📉 Decreasing questions to reach target: ${target}`);
   
   let total = totalQuestions(items);
   if (total <= target) {
-    console.log(`✅ Already at or below target (${total} <= ${target})`);
+    // console.log(`✅ Already at or below target (${total} <= ${target})`);
     return;
   }
 
@@ -432,18 +431,18 @@ function decreaseToTarget(items, target) {
         it.questions -= 1;
         total -= 1;
         progressed = true;
-        console.log(`➖ Removed question from ${it.skill}: ${it.questions + 1} → ${it.questions}`);
+        // console.log(`➖ Removed question from ${it.skill}: ${it.questions + 1} → ${it.questions}`);
         if (total <= target) break;
       }
     }
     
     if (!progressed) {
-      console.log(`⚠️ All items at minimum (4 questions), cannot decrease further`);
+    //   console.log(`⚠️ All items at minimum (4 questions), cannot decrease further`);
       break;
     }
   }
   
-  console.log(`✅ Decrease complete. Final total: ${total}`);
+//   console.log(`✅ Decrease complete. Final total: ${total}`);
 }
 /**
  * Fallback skill combinations to add when insufficient valid skills are found
@@ -486,17 +485,17 @@ const FALLBACK_SKILLS = [
  * @param {Array} items - Current array of skill items
  * @returns {boolean} True if minimum of 4 items achieved, false otherwise
  */
-function addFallbacksIfNeeded(items) {
-  console.log(`🔄 Checking if fallbacks needed (current: ${items.length} items)...`);
+function addFallbacksIfNeeded(items,total_questions_needed) {
+//   console.log(`🔄 Checking if fallbacks needed (current: ${items.length} items)...`);
   
   // Helper function to check if a domain-skill combination already exists
   function has(domain, skill) {
     return items.some(it => it.domain === domain && it.skill === skill);
   }
-
+  const combination_needed = Math.max(Math.ceil(total_questions_needed / 8),4);
   // Add fallback skills until we have at least 4 items
   for (const combo of FALLBACK_SKILLS) {
-    if (items.length >= 4) break;
+    if (items.length >= combination_needed) break;
     
     if (!has(combo.domain, combo.skill)) {
       const fallbackItem = {
@@ -507,14 +506,14 @@ function addFallbacksIfNeeded(items) {
       };
       
       items.push(fallbackItem);
-      console.log(`➕ Added fallback skill: ${combo.domain} - ${combo.skill}`);
+    //   console.log(`➕ Added fallback skill: ${combo.domain} - ${combo.skill}`);
     } else {
-      console.log(`⏭️ Fallback skill already exists: ${combo.domain} - ${combo.skill}`);
+    //   console.log(`⏭️ Fallback skill already exists: ${combo.domain} - ${combo.skill}`);
     }
   }
 
   const success = items.length >= 4;
-  console.log(`${success ? '✅' : '❌'} Fallback check complete: ${items.length} items (target: 4+)`);
+//   console.log(`${success ? '✅' : '❌'} Fallback check complete: ${items.length} items (target: 4+)`);
   return success;
 }
 
@@ -525,7 +524,7 @@ function addFallbacksIfNeeded(items) {
  * @returns {Array} Array capped to maximum 8 items
  */
 function capToMaxEight(items) {
-  console.log(`🔄 Checking item count limit (current: ${items.length} items)...`);
+//   console.log(`🔄 Checking item count limit (current: ${items.length} items)...`);
   
   if (items.length <= 8) {
     console.log(`✅ Item count within limit (${items.length} <= 8)`);
@@ -552,7 +551,7 @@ function capToMaxEight(items) {
  * @returns {Array|Object} The updated curated array or error object
  */
 function fillToTarget(curated, fallbackSkills, targetTotal, minPerSkill = 4) {
-  console.log(`🎯 Filling to target total: ${targetTotal} (min per skill: ${minPerSkill})`);
+//   console.log(`🎯 Filling to target total: ${targetTotal} (min per skill: ${minPerSkill})`);
   
   const maxPerSkill = 8;
   
@@ -561,15 +560,15 @@ function fillToTarget(curated, fallbackSkills, targetTotal, minPerSkill = 4) {
   }
 
   let total = totalQuestions(curated);
-  console.log(`📊 Current total: ${total}`);
+//   console.log(`📊 Current total: ${total}`);
 
   if (total === targetTotal) {
-    console.log(`✅ Already at target total`);
+    // console.log(`✅ Already at target total`);
     return curated;
   }
 
   let remaining = targetTotal - total;
-  console.log(`📈 Need to add: ${remaining} questions`);
+//   console.log(`📈 Need to add: ${remaining} questions`);
 
   for (let fallbackSkill of fallbackSkills) {
     if (remaining <= 0) break;
@@ -580,7 +579,7 @@ function fillToTarget(curated, fallbackSkills, targetTotal, minPerSkill = 4) {
     );
 
     if (exists) {
-      console.log(`⏭️ Skipping duplicate: ${fallbackSkill.domain} - ${fallbackSkill.skill}`);
+    //   console.log(`⏭️ Skipping duplicate: ${fallbackSkill.domain} - ${fallbackSkill.skill}`);
       continue;
     }
 
@@ -591,18 +590,18 @@ function fillToTarget(curated, fallbackSkills, targetTotal, minPerSkill = 4) {
     curated.push(newItem);
     remaining -= addCount;
     
-    console.log(`➕ Added skill: ${fallbackSkill.domain} - ${fallbackSkill.skill} (${addCount} questions)`);
+    // console.log(`➕ Added skill: ${fallbackSkill.domain} - ${fallbackSkill.skill} (${addCount} questions)`);
   }
 
   if (remaining > 0) {
     const error = {
       error: `Unable to reach target total (${targetTotal}). Short by ${remaining}.`
     };
-    console.log(`❌ ${error.error}`);
+    // console.log(`❌ ${error.error}`);
     return error;
   }
 
-  console.log(`✅ Fill to target complete. Final total: ${totalQuestions(curated)}`);
+//   console.log(`✅ Fill to target complete. Final total: ${totalQuestions(curated)}`);
   return curated;
 }
 
@@ -615,7 +614,7 @@ function fillToTarget(curated, fallbackSkills, targetTotal, minPerSkill = 4) {
  * @returns {Array} Array with balanced question counts
  */
 function balanceQuestions(arr, targetTotal) {
-  console.log(`⚖️ Balancing questions to reach target: ${targetTotal}`);
+//   console.log(`⚖️ Balancing questions to reach target: ${targetTotal}`);
   
   const MIN = 4;
   const MAX = 8;
@@ -643,12 +642,12 @@ function balanceQuestions(arr, targetTotal) {
     if (item.questions > MAX) item.questions = MAX;
     
     if (original !== item.questions) {
-      console.log(`🔧 Bounded ${item.skill}: ${original} → ${item.questions}`);
+    //   console.log(`🔧 Bounded ${item.skill}: ${original} → ${item.questions}`);
     }
   });
 
   let total = totalQuestions(arr);
-  console.log(`📊 Initial total after bounding: ${total}`);
+//   console.log(`📊 Initial total after bounding: ${total}`);
 
   // Adjust step by step (+1 or -1) until target is reached
   let iterations = 0;
@@ -663,7 +662,7 @@ function balanceQuestions(arr, targetTotal) {
         if (item.questions < MAX) {
           item.questions += 1;
           total += 1;
-          console.log(`➕ Increased ${item.skill}: ${item.questions - 1} → ${item.questions}`);
+        //   console.log(`➕ Increased ${item.skill}: ${item.questions - 1} → ${item.questions}`);
           break;
         }
       }
@@ -673,7 +672,7 @@ function balanceQuestions(arr, targetTotal) {
         if (item.questions > MIN) {
           item.questions -= 1;
           total -= 1;
-          console.log(`➖ Decreased ${item.skill}: ${item.questions + 1} → ${item.questions}`);
+        //   console.log(`➖ Decreased ${item.skill}: ${item.questions + 1} → ${item.questions}`);
           break;
         }
       }
@@ -683,10 +682,10 @@ function balanceQuestions(arr, targetTotal) {
   }
 
   if (iterations >= maxIterations) {
-    console.log(`⚠️ Reached maximum iterations (${maxIterations}) while balancing`);
+    // console.log(`⚠️ Reached maximum iterations (${maxIterations}) while balancing`);
   }
 
-  console.log(`✅ Balance complete. Final total: ${total} (iterations: ${iterations})`);
+//   console.log(`✅ Balance complete. Final total: ${total} (iterations: ${iterations})`);
   return arr;
 }
 
@@ -701,8 +700,8 @@ function balanceQuestions(arr, targetTotal) {
  * @returns {string} JSON string of the processed and optimized skill assessment array
  */
 function adjustAiResponse(jsonText, targetTotal) {
-  console.log(`🚀 Starting AI response adjustment process...`);
-  console.log(`🎯 Target total questions: ${targetTotal}`);
+//   console.log(`🚀 Starting AI response adjustment process...`);
+//   console.log(`🎯 Target total questions: ${targetTotal}`);
   
   // Step 1: Parse and validate JSON input
   let aiArray;
@@ -710,18 +709,20 @@ function adjustAiResponse(jsonText, targetTotal) {
     aiArray = JSON.parse(jsonText);
     if (!Array.isArray(aiArray)) {
       const error = { error: "Input must be a JSON array" };
-      console.log(`❌ ${error.error}`);
+    //   console.log(`❌ ${error.error}`);
       return JSON.stringify(error);
     }
-    console.log(`✅ Successfully parsed JSON array with ${aiArray.length} items`);
+    //  console.log(`✅ Successfully parsed JSON array with ${aiArray.length} items`);
+  console.log("from AI ----- ",aiArray )
+      
   } catch (e) {
     const error = { error: "Invalid JSON input" };
-    console.log(`❌ ${error.error}: ${e.message}`);
+    // console.log(`❌ ${error.error}: ${e.message}`);
     return JSON.stringify(error);
   }
 
-  // Step 2: Normalize and validate each item using fuzzy matching
-  console.log(`🔄 Processing and validating items...`);
+  // Step 2: Normalize and validate each item using fuzzy matching and remove invalid
+//   console.log(`🔄 Processing and validating items...`);
   const canonical = [];
   for (const raw of aiArray) {
     const mapped = toCanonicalItem(raw);
@@ -729,19 +730,24 @@ function adjustAiResponse(jsonText, targetTotal) {
       canonical.push(mapped);
     }
   }
-  console.log(`✅ Validated ${canonical.length} out of ${aiArray.length} items`);
+console.log(`✅ Validated ${canonical.length} out of ${aiArray.length} items`);
 
   // Step 3: Remove duplicates based on domain+skill combination
   let curated = dedupe(canonical);
-
+  console.log("result After Remove duplicates based on domain+skill combination")
+  console.log("----------------")
+  console.log(curated)
   // Step 4: Ensure minimum of 4 items by adding fallbacks if needed
-  if (!addFallbacksIfNeeded(curated)) {
+  if (!addFallbacksIfNeeded(curated,targetTotal)) {
     const error = {
       error: "Valid Skill Set combination count is less than 4 even after adding fallbacks (Business Math / Accounting Principles)."
     };
-    console.log(`❌ ${error.error}`);
+    // console.log(`❌ ${error.error}`);
     return JSON.stringify(error);
   }
+  console.log("Add data from fallback based on Total Question/8(rounded up) or 4")
+  console.log("-------------------")
+  console.log(curated)
 
   // Step 5: Limit to maximum of 8 items (keep highest question counts)
   curated = capToMaxEight(curated);
@@ -749,20 +755,22 @@ function adjustAiResponse(jsonText, targetTotal) {
   // Step 6: Ensure each item has questions within bounds [4-8]
   ensurePerItemBounds(curated);
 
+  console.log(`🔧 After Ensuring per-item question bounds [4-8] `);
+  console.log(curated)
   // Step 7: Adjust total to target by increasing/decreasing question counts
   increaseToTarget(curated, targetTotal);
   decreaseToTarget(curated, targetTotal);
 
   // Step 8: Final validation and balancing
   const total = totalQuestions(curated);
-  console.log(`📊 Current total: ${total}, Target: ${targetTotal}`);
+//   console.log(`📊 Current total: ${total}, Target: ${targetTotal}`);
   
   if (total !== targetTotal) {
     console.log(`🔄 Final balancing required...`);
     const fillResult = fillToTarget(curated, FALLBACK_SKILLS, targetTotal, 4);
     
     if (fillResult.error) {
-      console.log(`❌ ${fillResult.error}`);
+    //   console.log(`❌ ${fillResult.error}`);
       return JSON.stringify(fillResult);
     }
     
@@ -784,43 +792,50 @@ function adjustAiResponse(jsonText, targetTotal) {
  * This section demonstrates the skill assessment system with sample data
  */
 const testData = [
-  {
-    domain: "General Accounting",
-    skill: "Account Receivables", 
-    difficulty: "Complex",
-    questions: 8
-  },
-  {
-    domain: "General Accounting",
-    skill: "Accounting Principles",
-    difficulty: "Medium", 
-    questions: 6
-  },
-  {
-    domain: "Tech Proficiency",
-    skill: "Excel Intermediate",
-    difficulty: "Medium",
-    questions: 5
-  },
-  {
-    domain: "Tech Proficiency", 
-    skill: "SAP S/4 HANA",
-    difficulty: "Medium",
-    questions: 5
-  },
-  {
-    domain: "Aptitude",
-    skill: "Business Math",
-    difficulty: "Simple",
-    questions: 6
-  }
-];
+    {
+        "domain": "Strategic Finance",
+        "skill": "Equity Valuation",
+        "difficulty": "Complex",
+        "questions": 10
+    },
+    {
+        "domain": "Strategic Finance",
+        "skill": "Equity Valuation",
+        "difficulty": "medium",
+        "questions": 6
+    },
+    {
+        "domain": "Strategic Finance",
+        "skill": "Debt Valuation",
+        "difficulty": "Complex",
+        "questions": 2
+    },
+    {
+        "domain": "Tech Proficiency",
+        "skill": "Excel Advanced",
+        "difficulty": "Medium",
+        "questions": 5
+    },
+    // {
+    //     "domain": "Tech Proficiency",
+    //     "skill": "SQL",
+    //     "difficulty": "Medium",
+    //     "questions": 5
+    // },
+    {
+        "domain": "Business Finance",
+        "skill": "Financial Modeling",
+        "difficulty": "Complex",
+        "questions": 8
+    }
+]
 
 // Execute the test
 console.log("🧪 Running test with sample data...");
-const result = adjustAiResponse(JSON.stringify(testData), 57);
+const result = adjustAiResponse(JSON.stringify(testData), 43);
 console.log("📄 Final JSON result:");
 console.log(result);
+
 
 
 
